@@ -1,0 +1,130 @@
+---
+title: "Homework2"
+author: "Bashir Saeed"
+date: "8 11 2021"
+output: html_document
+---
+library("compGenomRData")
+counts_file <- system.file("extdata/rna-seq/SRP029880.raw_counts.tsv",
+                           package = "compGenomRData")
+coldata_file <- system.file("extdata/rna-seq/SRP029880.colData.tsv",
+                            package = "compGenomRData")
+
+## **Exploring the count tables** ##                            
+##### 1
+```{r}
+library("compGenomRData")
+counts_file <- system.file("extdata/rna-seq/SRP029880.raw_counts.tsv",
+                           package = "compGenomRData")
+coldata_file <- system.file("extdata/rna-seq/SRP029880.colData.tsv",
+                            package = "compGenomRData")
+
+counts_df <- read.table(counts_file, header = T, sep = '\t')
+counts_mat <- as.matrix(counts_df)
+geneLengths_mat <- subset(counts_mat, select = c(width))
+geneLengths_vector <- as.vector(geneLengths_mat)
+
+rpkm <- apply(X = subset(counts_mat, select = c(-width)),
+              MARGIN = 2,
+              FUN = function(x) {
+                (x * 10^9) / (geneLengths_vector * sum(as.numeric(x)))
+              })
+
+colSums(rpkm)
+tpm <- apply(rpkm, 2, function(x) {(x / sum(as.numeric(x))) * 10^6})
+
+colSums(tpm)
+
+```
+
+
+##### 2
+```{r}
+
+
+V <- apply(tpm, 1, var)
+selectedGenes <- names(V[order(V, decreasing = T)][1:500])
+library(pheatmap)
+pheatmap(tpm[selectedGenes,], scale = 'row', show_rownames = FALSE)
+
+selectedGenes2 <- names(V[order(V, decreasing = T)][1:100])
+library(pheatmap)
+pheatmap(tpm[selectedGenes2,], scale = 'row', show_rownames = FALSE)
+```
+##### 3
+```{r}
+pheatmap(tpm[selectedGenes,], scale = 'none', show_rownames = FALSE)
+
+pheatmap(tpm[selectedGenes,], scale = 'column', show_rownames = FALSE)
+
+pheatmap(tpm[selectedGenes,], scale = 'row', show_rownames = FALSE)
+
+pheatmap(tpm[selectedGenes2,], scale = 'none', show_rownames = FALSE)
+
+pheatmap(tpm[selectedGenes2,], scale = 'column', show_rownames = FALSE)
+
+pheatmap(tpm[selectedGenes2,], scale = 'row', show_rownames = FALSE)
+```
+##### 4
+```{r}
+install.packages("corrplot")
+library(corrplot)
+correlationmatrixx = cor(tpm)
+corrplot(correlationmatrixx, order = "hclust", type = "upper"  ,
+addrect = 2, addCoef.col = "black" ,method="ellipse" ,
+number.cex = 0.7 , hclust.method= "average")
+
+```
+##### 5
+```{r}
+#extracting the 100 genes that have the highest total expression in all samples
+expression <- as.matrix(rowSums(tpm))
+highestexpress1 <- as.matrix(expression[expression %in% tail(sort(expression),100),])
+dim(highestexpress1)
+hightpm <- as.matrix(tpm[rownames(tpm) %in% rownames(highestexpress1),])
+
+
+
+
+```
+
+##### 6
+```{r}
+install.packages("ggfortify")
+library(ggfortify)
+coldata <- as.matrix(read.table(coldata_file, header = T, sep = '\t'))
+pca_res <- prcomp(hightpm, scale. = TRUE)
+autoplot(pca_res, data = coldata, colour = "source_name")
+annotation <- data.frame(sampletype=coldata[,1],
+                         row.names=rownames(coldata))
+pheatmap(tpm[selectedGenes,], scale = 'none', show_rownames = FALSE, annotation_col = annotation)
+
+pheatmap(tpm[selectedGenes,], scale = 'column', show_rownames = FALSE ,annotation_col = annotation)
+
+pheatmap(tpm[selectedGenes,], scale = 'row', show_rownames = FALSE ,annotation_col = annotation)
+
+pheatmap(tpm[selectedGenes2,], scale = 'none', show_rownames = FALSE ,annotation_col = annotation)
+
+pheatmap(tpm[selectedGenes2,], scale = 'column', show_rownames = FALSE, annotation_col = annotation)
+
+pheatmap(tpm[selectedGenes2,], scale = 'row', show_rownames = FALSE , annotation_col = annotation)
+
+```
+##### 7
+```{r}
+rowsub = apply(tpm, 1, function(row) all(row !=0 ))
+pheatmap(tpm[rowsub,], scale = 'row', show_rownames = FALSE)
+
+```
+##### 8
+```{r}
+#done
+```
+##### 9
+```{r}
+#done,https://github.com/Bashir1225
+```
+##### 10
+```{r}
+#https://github.com/Bashir1225/Genomic-data-course-Bashir/
+```
